@@ -1,10 +1,17 @@
 from django.db import models
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
+from django.contrib.auth.models import (
+    BaseUserManager,
+    AbstractBaseUser,
+    PermissionsMixin,
+)
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 
+
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, username, password=None, role="adolescent", **extra_fields):
+    def create_user(
+        self, email, username, password=None, role="adolescent", **extra_fields
+    ):
         if not email:
             raise ValueError("Email is required")
         if not username:
@@ -31,7 +38,9 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, username, password, **extra_fields)
 
+
 # ------------------------------------------- USER MODEL ----------------------------------------------------
+
 
 class User(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICE = [
@@ -60,7 +69,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     def has_module_perms(self, app_label):
         return True
 
+
 # ------------------------------------ USER PROFILE -----------------------------------
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
@@ -70,16 +81,29 @@ class UserProfile(models.Model):
     profile_pic = models.ImageField(upload_to="profile_pic/", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.user.username}'s Profile"
+
+# previous
+# def __str__(self):
+# return f"{self.user.username}'s Profile"
+
+
+# Add this to UserProfile class
+def save(self, *args, **kwargs):
+    if not self.name:
+        self.name = self.user.username
+    super().save(*args, **kwargs)
+
 
 @login_required
 def get_username(request):
     return JsonResponse({"username": request.user.username})
 
+
 # ----------------------------------- Chatbot ---------------------------------------
 class ChatHistory(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="chat_history")
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="chat_history"
+    )
     query = models.TextField()
     response = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
